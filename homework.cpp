@@ -4,9 +4,12 @@
 #include <vector>
 #include <queue>
 #include <set>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 using namespace std;
+
 
 class node
 {
@@ -24,21 +27,7 @@ class node
 	}
 };
 
-bool operator<(node m, node n)
-{
-	if(m.x < n.x)
-		return true;
-	if(m.x > n.x)
-		return false;
-	if(m.y < n.y)
-		return true;
-	if(m.y > n.y)
-		return false;
-	if(m.z < n.z)
-		return true;
-	return false;
-	
-}
+node goal;
 
 class state
 {
@@ -53,6 +42,11 @@ class state
 	int sum;
 };
 
+bool operator<(node m, node n);
+bool operator<(state m, state n);
+bool comp_ucs(const state a, const state b);
+bool comp_a(const state a, const state b);
+
 int main()
 {
 	string s;
@@ -62,14 +56,14 @@ int main()
 	out.open("output.txt", ofstream::out);
 	in >> s;
 	int dim_x, dim_y, dim_z;
-	node begin, end;
+	node begin;
 	in >> dim_x >> dim_y >> dim_z;
 	in >> begin.x >> begin.y >> begin.z;
-	in >> end.x >> end.y >> end.z;
+	in >> goal.x >> goal.y >> goal.z;
 	int N;
 	in >> N;
 	map <node, vector<int> > adj;
-	int inv[19] = {0, 2, 1, 4, 3, 6, 5, 10, 9, 8, 7, 14, 13, 12, 11, 18, 17, 16, 15};
+	//int inv[19] = {0, 2, 1, 4, 3, 6, 5, 10, 9, 8, 7, 14, 13, 12, 11, 18, 17, 16, 15};
 	int c1[19] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 	int c2[19] = {0, 10, 10, 10, 10, 10, 10, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14};
 	int *cost;
@@ -80,9 +74,7 @@ int main()
 	while(N--)
 	{
 		node n;
-		in >> n.x;
-		in >> n.y;
-		in >> n.z;
+		in >> n.x >> n.y >> n.z;
 		while(in.peek() != '\n' && in.peek() != EOF)
 		{
 			int i;
@@ -91,15 +83,16 @@ int main()
 		}
 	}
 	set<node> traveled;
-	queue<state> frontier;
+	priority_queue<state> frontier;
 	frontier.push(state(begin));
+	traveled.insert(begin);
 	while(!frontier.empty())
 	{
-		state now_state = frontier.front();
+		state now_state = frontier.top();
 		frontier.pop();
-		if(now_state.at == end)
+		if(now_state.at == goal)
 		{
-			if(s == "BFS")
+			//if(s == "BFS" || s == "A*")
 			{
 				out << now_state.sum << endl;
 				out << now_state.list.size() + 1 << endl;
@@ -113,13 +106,10 @@ int main()
 					out << cost[now_state.list[i]];
 				}
 			}
-			if(s == "UCS")
-			{
-				
-			}
 			return 0;
 		}
 		vector<int> *vect = &adj[now_state.at];
+		vector<state> new_states;
 		for(int i = 0; i < vect->size(); i++)
 		{
 			node target = now_state.at.go((*vect)[i]);
@@ -130,13 +120,21 @@ int main()
 			s.list.push_back((*vect)[i]);
 			s.at = target;
 			traveled.insert(s.at);
-			frontier.push(s);
+			new_states.push_back(s);
 		}
-
+		if(s == "UCS")
+			sort(new_states.begin(), new_states.end(), comp_ucs);
+		else if(s == "A*")
+			sort(new_states.begin(), new_states.end(), comp_a);
+		for(int i = 0; i < new_states.size(); i++)
+			frontier.push(new_states[i]);
 	}
 	out << "FAIL";
 	return 0;
 }
+
+
+
 
 node node::set(int in_x, int in_y, int in_z)
 {
@@ -222,4 +220,41 @@ node node::go(int step)
 	n.z += this->z;
 	return n;
 }
+
+bool operator<(node m, node n)
+{
+	if(m.x < n.x)
+		return true;
+	if(m.x > n.x)
+		return false;
+	if(m.y < n.y)
+		return true;
+	if(m.y > n.y)
+		return false;
+	if(m.z < n.z)
+		return true;
+	return false;
+	
+}
+
+bool operator<(state m, state n)
+{
+	return m.sum > n.sum;
+}
+
+double dist(node a, node b)
+{
+	return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
+}
+
+bool comp_ucs(const state a, const state b)
+{
+	return a.sum < b.sum;
+}
+
+bool comp_a(const state a, const state b)
+{
+	return a.sum + dist(a.at, goal) < b.sum + dist(b.at, goal);
+}
+
 
