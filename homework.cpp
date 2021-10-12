@@ -83,12 +83,14 @@ int main()
 		}
 	}
 	set<node> traveled;
-	priority_queue<state> frontier;
+	//priority_queue<state> frontier;
+	queue<state> frontier;
 	frontier.push(state(begin));
 	traveled.insert(begin);
 	while(!frontier.empty())
 	{
-		state now_state = frontier.top();
+		//state now_state = frontier.top();//priority queue
+		state now_state = frontier.front();//queue
 		frontier.pop();
 		if(now_state.at == goal)
 		{
@@ -127,7 +129,11 @@ int main()
 		else if(s == "A*")
 			sort(new_states.begin(), new_states.end(), comp_a);
 		for(int i = 0; i < new_states.size(); i++)
+		{
+			cout << new_states[i].at.x << new_states[i].at.y << new_states[i].at.z << endl;
 			frontier.push(new_states[i]);
+		}
+		cout << endl;
 	}
 	out << "FAIL";
 	return 0;
@@ -244,7 +250,7 @@ bool operator<(state m, state n)
 
 double dist(node a, node b)
 {
-	return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
+	return sqrt(double((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z)));
 }
 
 bool comp_ucs(const state a, const state b)
@@ -254,6 +260,7 @@ bool comp_ucs(const state a, const state b)
 
 bool comp_a(const state a, const state b)
 {
+	cout << a.sum << " " << dist(a.at, goal) << " " << b.sum << " " << dist(b.at, goal) << endl;
 	return a.sum + dist(a.at, goal) < b.sum + dist(b.at, goal);
 }
 
